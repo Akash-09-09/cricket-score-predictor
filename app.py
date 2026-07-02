@@ -2,7 +2,6 @@ import streamlit as st
 import joblib
 import pandas as pd
 import numpy as np
-import plotly.graph_objects as go
 
 # ==========================================
 # PAGE CONFIGURATION & STYLING
@@ -338,109 +337,6 @@ with col_p2:
     )
     st.progress(bowl_prob / 100)
 
-# ── Live Progression Graph & Phase Breakdown ──
-st.markdown("---")
-col_g1, col_g2 = st.columns([2, 1])
-
-with col_g1:
-    overs_axis = list(range(1, 21))
-    runs_progression = []
-    lower_progression = []
-    upper_progression = []
-
-    for i in overs_axis:
-        if i <= over:
-            val = (cumulative_runs / over) * i if over > 0 else 0
-            runs_progression.append(val)
-            lower_progression.append(val)
-            upper_progression.append(val)
-        else:
-            val = cumulative_runs + (predicted_score - cumulative_runs) * (i - over) / (20 - over)
-            runs_progression.append(val)
-            scale = (i - over) / (20 - over)
-            lower_progression.append(val - (margin * scale))
-            upper_progression.append(val + (margin * scale))
-
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=overs_axis, y=upper_progression, 
-        mode='lines', line=dict(width=0), 
-        showlegend=False
-    ))
-    fig.add_trace(go.Scatter(
-        x=overs_axis, y=lower_progression, 
-        mode='lines', line=dict(width=0), 
-        fill='tonexty', fillcolor='rgba(244, 63, 94, 0.15)', 
-        name='Confidence Range'
-    ))
-    fig.add_trace(go.Scatter(
-        x=overs_axis, y=runs_progression, 
-        mode='lines+markers', line=dict(color='#f43f5e', width=3.5), 
-        name='Projected Path'
-    ))
-
-    fig.update_layout(
-        title='📈 Innings Score Progression Projection',
-        xaxis=dict(title='Over', tickmode='linear', tick0=1, dtick=1),
-        yaxis=dict(title='Runs'),
-        template='plotly_dark',
-        height=380,
-        margin=dict(l=10, r=10, t=40, b=10),
-        legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01)
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-with col_g2:
-    st.markdown("### ⏱️ Phase Run Rates")
-    if over <= 6:
-        pp_rr = current_run_rate
-        mid_rr = 0.0
-        death_rr = 0.0
-    elif over <= 15:
-        pp_rr = 7.5
-        pp_runs = pp_rr * 6
-        mid_runs = max(0, cumulative_runs - pp_runs)
-        mid_overs = over - 6
-        mid_rr = round(mid_runs / mid_overs, 2) if mid_overs > 0 else 0.0
-        death_rr = 0.0
-    else:
-        pp_rr = 7.5
-        mid_rr = 7.2
-        pp_runs = pp_rr * 6
-        mid_runs = mid_rr * 9
-        death_runs = max(0, cumulative_runs - pp_runs - mid_runs)
-        death_overs = over - 15
-        death_rr = round(death_runs / death_overs, 2) if death_overs > 0 else 0.0
-
-    st.markdown(
-        f'<div class="metric-card" style="margin-bottom: 0.75rem; padding: 0.75rem;">'
-        f'<div class="metric-title" style="font-size: 0.75rem; color: #a1a1aa;">Powerplay (Overs 1-6)</div>'
-        f'<div class="metric-value" style="font-size: 1.35rem; color: #10b981; margin: 0;">{pp_rr:.2f} RPO</div>'
-        f'</div>',
-        unsafe_allow_html=True
-    )
-    
-    mid_color = "#3b82f6" if over > 6 else "#6b7280"
-    st.markdown(
-        f'<div class="metric-card" style="margin-bottom: 0.75rem; padding: 0.75rem;">'
-        f'<div class="metric-title" style="font-size: 0.75rem; color: #a1a1aa;">Middle (Overs 7-15)</div>'
-        f'<div class="metric-value" style="font-size: 1.35rem; color: {mid_color}; margin: 0;">'
-        f'{"{:.2f} RPO".format(mid_rr) if over > 6 else "—"}'
-        f'</div>'
-        f'</div>',
-        unsafe_allow_html=True
-    )
-    
-    death_color = "#f59e0b" if over > 15 else "#6b7280"
-    st.markdown(
-        f'<div class="metric-card" style="padding: 0.75rem;">'
-        f'<div class="metric-title" style="font-size: 0.75rem; color: #a1a1aa;">Death (Overs 16-20)</div>'
-        f'<div class="metric-value" style="font-size: 1.35rem; color: {death_color}; margin: 0;">'
-        f'{"{:.2f} RPO".format(death_rr) if over > 15 else "—"}'
-        f'</div>'
-        f'</div>',
-        unsafe_allow_html=True
-    )
 
 # ── Chase result banner ──
 if match_type == "2nd Innings (Chase)" and target:
