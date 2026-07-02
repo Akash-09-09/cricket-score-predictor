@@ -1,0 +1,18 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Model artifacts (binary files)
+*.pkl
+*.joblib
+
+# Large raw datasets
+ball_by_ball_ipl.csv
+
+# OS files
+desktop.ini
+.DS_Store
+
+# Streamlit config
+.streamlit/
