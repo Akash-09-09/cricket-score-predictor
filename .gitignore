@@ -6,6 +6,8 @@ __pycache__/
 # Model artifacts (binary files)
 *.pkl
 *.joblib
+!cricket_model.pkl
+!teams.pkl
 
 # Large raw datasets
 ball_by_ball_ipl.csv
