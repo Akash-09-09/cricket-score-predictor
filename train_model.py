@@ -31,6 +31,7 @@ col_extra = find_col(['Extra Runs', 'extra_runs', 'extras'])
 col_wicket = find_col(['Wicket', 'wicket', 'dismissal_kind', 'player_dismissed'])
 
 # 3. Clean Data
+print("\nCleaning data and engineering features...")
 df = df[df[col_inning] == 1].copy()
 df['runs_off_bat'] = pd.to_numeric(df[col_bat_runs], errors='coerce').fillna(0)
 df['extras'] = pd.to_numeric(df[col_extra], errors='coerce').fillna(0)
@@ -84,10 +85,25 @@ preprocessor = ColumnTransformer([
 rf_pipeline = Pipeline([('preprocessor', preprocessor), ('model', RandomForestRegressor(n_estimators=200, random_state=42))])
 xgb_pipeline = Pipeline([('preprocessor', preprocessor), ('model', xgb.XGBRegressor(n_estimators=200, learning_rate=0.05))])
 
+print("\nTraining Random Forest and XGBoost models (this may take 1-2 minutes)...")
 rf_pipeline.fit(X_train, y_train)
 xgb_pipeline.fit(X_train, y_train)
 
-best_model = rf_pipeline if r2_score(y_test, rf_pipeline.predict(X_test)) > r2_score(y_test, xgb_pipeline.predict(X_test)) else xgb_pipeline
+# Evaluation comparison
+rf_preds = rf_pipeline.predict(X_test)
+rf_r2 = r2_score(y_test, rf_preds)
+rf_mae = mean_absolute_error(y_test, rf_preds)
+print(f"Random Forest — R²: {rf_r2:.4f} | MAE: {rf_mae:.2f} runs")
+
+xgb_preds = xgb_pipeline.predict(X_test)
+xgb_r2 = r2_score(y_test, xgb_preds)
+xgb_mae = mean_absolute_error(y_test, xgb_preds)
+print(f"XGBoost — R²: {xgb_r2:.4f} | MAE: {xgb_mae:.2f}")
+
+best_name = 'Random Forest' if rf_r2 > xgb_r2 else 'XGBoost'
+print(f"\nBest model selected: {best_name}")
+
+best_model = rf_pipeline if best_name == 'Random Forest' else xgb_pipeline
 
 joblib.dump(best_model, 'cricket_model.pkl')
 joblib.dump(sorted(over_df['batting_team'].unique().tolist()), 'teams.pkl')
